@@ -1,0 +1,589 @@
+{
+  "name": "seo-research-content",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1376,
+        -484
+      ],
+      "id": "ea6055dc-3aec-4862-8668-310d2760270c",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "q": "={{ $json['Search Query'] }}",
+        "location": "={{ $json.Location }}",
+        "additionalFields": {
+          "google_domain": "google.com",
+          "gl": "us",
+          "hl": "en",
+          "num": "10"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-serpapi.serpApi",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -580
+      ],
+      "id": "66b6b75e-7a98-44c5-b1d4-bd6bccdb4b92",
+      "name": "Google search"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Pending"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1152,
+        -484
+      ],
+      "id": "877a9a36-814a-490a-9415-1faa0de47ec2",
+      "name": "Get row(s) in sheet"
+    },
+    {
+      "parameters": {
+        "operation": "youtube",
+        "search_query": "={{ $('Get row(s) in sheet').item.json['Search Query'] }}",
+        "additionalFields": {
+          "gl": "us",
+          "hl": "en"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-serpapi.serpApi",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -388
+      ],
+      "id": "247f4b10-e1f6-4927-aa96-c09514a72d04",
+      "name": "Youtube search"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -184,
+        -260
+      ],
+      "id": "2a98b067-b61d-4ee9-81eb-8a2bd7c8e81c",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# INPUT DATA\nTopic: {{ $json.topic }}\n\nConsolidated SERP Data:\n{{ $json.consolidated_serp }}\n\n# MISSION\nAnalyze the data to determine the \"Market Reality\" of this topic for a YouTube technical tutorial aimed at business owners and freelancers seeking practical utility and upskilling.\n\nOutput a structured report covering these 3 distinct checks exactly as specified. Cite specific data points for every claim.\n\n1. THE TERMINOLOGY CHECK\n   - Compare the exact words and phrases in the user's input topic against the language used in the top 5 most-viewed YouTube videos (by views) and top Google organic results.\n   - Identify if the market prefers outcome-oriented, practical terms (e.g., \"PDF extraction\", \"invoice automation\", \"data from documents\") over academic/technical terms (e.g., \"classification\", \"agent\").\n   - Output format:\n     - User Terms: [list key terms from topic]\n     - Market Terms: [list dominant terms/phrases from top results]\n     - Evidence: [Specific citations with titles, views, or positions]\n\n2. THE SATURATION CHECK (The \"Reddit Rule\")\n   - Examine the top 5 Google organic results.\n   - Determine if community/forums (Reddit, n8n community, Stack Overflow, etc.) appear in prominent positions.\n   - Logic: Forum presence = content void / unsolved problems = high opportunity. Dominance of official docs, corporate blogs, or paid tools = saturated.\n   - Output format:\n     - Saturation Score: Low / Medium / High\n     - Reasoning: [List top 3 domains/sources with positions]\n     - Evidence: [Specific result citations]\n\n3. THE VELOCITY CHECK\n   - Identify the YouTube video with the highest view-to-age ratio (views divided by months since publication; prioritize videos <6 months old with high views).\n   - If no recent high-view videos exist, note the most relevant recent one.\n   - Output format:\n     - Outlier Video: [Title + Channel]\n     - Stats: [Views] views, published [date/age]\n     - View-to-Age Ratio Insight: [Brief calculation or note, e.g., \"25k views in 7 days\"]\n     - Why it won: [Key title keywords, framing, or hooks that likely drove performance]\n\n# VERDICT\nProvide exactly these four points (no additional text in this section):\n**Recommendation**: [One of: \"Proceed – strong opportunity\", \"Proceed with shift – [brief shift description e.g., to PDF/invoice extraction focus]\", \"Proceed – current topic aligns well\", \"Do not proceed – too competitive/saturated\", \"Do not proceed – insufficient search interest/volume\", or similar honest assessment]\n**Confidence Score**: [0-100] (100 = extremely clear signal from data; 0 = almost no usable data or highly ambiguous)\n**Reasoning**: [2-4 sentences explaining the verdict, grounded exclusively in the data from the three checks above. Explicitly reference specific evidence cited earlier.]\n**Key Market Signals for Content**: \n  - Dominant outcome terms: [e.g., \"PDF extraction\", \"invoice processing\", \"automate data entry\"]\n  - Evidence of content void: [e.g., \"Reddit/n8n community in top 2 Google results\", or \"None – dominated by official docs\"]\n  - Momentum indicator: [e.g., \"Recent video with 25k views in 7 days using 'Beginners 2026' framing\", or \"No strong recent performers\"]",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a Senior Data Analyst specializing in YouTube and Google search market intelligence for technical tutorial content. Your role is strictly factual and evidence-based. You extract and report objective signals from raw SERP JSON data without speculation, creative suggestions, or opinions on strategy.  Key rules: - Base every claim on specific data points from the provided JSON. - Cite evidence clearly using references like \"Google Organic Result #1\", \"YouTube Video Result #3 (title + views)\", or \"Google Related Search #2\". - Do not invent data, extrapolate trends beyond what is directly observable, or recommend titles/descriptions. - Be concise but exhaustive in evidence. Use bullet points and short paragraphs. - If data is missing or insufficient for a check, state \"Insufficient data\" and do not force a conclusion. - Always output in clean, structured Markdown with the exact section headings below."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -256,
+        -484
+      ],
+      "id": "3a5a891b-a5fb-4f3e-8238-8226a33218b5",
+      "name": "Data Analyst"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -704,
+        -484
+      ],
+      "id": "7d37454b-542a-42b4-a371-3ebf371e2785",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items to separate Google and YouTube results\nconst googleResults = items.find(item => item.json.search_parameters && item.json.search_parameters.engine === 'google');\nconst youtubeResults = items.find(item => item.json.search_parameters && item.json.search_parameters.engine === 'youtube');\n\n// Dynamically extract the topic from the search parameters\n// We prefer the Google query 'q', but fall back to YouTube 'search_query' if needed\nlet topic = \"Unknown Topic\";\nif (googleResults && googleResults.json.search_parameters.q) {\n  topic = googleResults.json.search_parameters.q;\n} else if (youtubeResults && youtubeResults.json.search_parameters.search_query) {\n  topic = youtubeResults.json.search_parameters.search_query;\n}\n\n// Prepare the consolidated data object\nconst consolidatedData = {\n  topic: topic,\n  google: {\n    total_results: googleResults ? googleResults.json.search_information.total_results : 0,\n    organic_results: googleResults ? googleResults.json.organic_results : [],\n    // You can add more Google fields here if needed\n  },\n  youtube: {\n    total_results: youtubeResults ? youtubeResults.json.search_information.total_results : 0,\n    video_results: youtubeResults ? youtubeResults.json.video_results : [],\n    shorts_results: youtubeResults ? youtubeResults.json.shorts_results : []\n  },\n  google_total: googleResults ? googleResults.json.search_information.total_results : 0,\n  youtube_total: youtubeResults ? youtubeResults.json.search_information.total_results : 0\n};\n\n// Return the data in the specific format requested\n// Note: We stringify 'consolidated_serp' because your output example showed it as a string\nreturn [\n  {\n    json: {\n      topic: topic,\n      consolidated_serp: JSON.stringify(consolidatedData, null, 2)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        -484
+      ],
+      "id": "0825f538-c532-4312-a15d-df6bca12f6e3",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        168,
+        -136
+      ],
+      "id": "4f23bd8e-f9e3-44d2-a763-095eabb1fd8c",
+      "name": "Google Gemini Chat Model1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop through all input items\nfor (const item of items) {\n  const text = item.json.text || \"\";\n  \n  // --- ROBUST DATA FETCHING ---\n  // We grab both the 'topic' and the 'row_number' directly from the source node\n  let searchKey = \"Unknown\";\n  let rowNum = \"\";\n  \n  try {\n    // Access the original source node\n    const sourceItems = $('Get row(s) in sheet').all();\n    // Match by index (assumes 1-to-1 processing)\n    const sourceItem = sourceItems[item.index] || sourceItems[0];\n    \n    searchKey = sourceItem.json[\"Search Query\"] || sourceItem.json.topic;\n    rowNum = sourceItem.json.row_number; \n  } catch (e) {\n    console.log(\"Could not fetch source data\");\n  }\n\n  // --- PARSING LOGIC ---\n  function getVal(block, label) {\n    if (!block) return \"\";\n    const regex = new RegExp(`\\\\*\\\\*${label}\\\\*\\\\*:\\\\s*(.*)`);\n    const match = block.match(regex);\n    return match ? match[1].trim() : \"\";\n  }\n\n  const sections = text.split(/## \\d\\. |# VERDICT/);\n  const termSection = sections.find(s => s.includes(\"THE TERMINOLOGY CHECK\")) || \"\";\n  const satSection = sections.find(s => s.includes(\"THE SATURATION CHECK\")) || \"\";\n  const velSection = sections.find(s => s.includes(\"THE VELOCITY CHECK\")) || \"\";\n  const verdictSection = sections.find(s => s.includes(\"Recommendation\")) || sections[sections.length - 1] || \"\";\n\n  // Output Object\n  item.json = {\n    \"row_number\": rowNum, // <--- CRITICAL FOR UPDATING\n    \"Search Query\": searchKey, \n    \"User Terms\": getVal(termSection, \"User Terms\"),\n    \"Google Organic Terms\": getVal(termSection, \"Google Organic \\\\(Top 5\\\\)\"),\n    \"YouTube Terms\": getVal(termSection, \"YouTube \\\\(Top 5 by views\\\\)\"),\n    \"Saturation Score\": getVal(satSection, \"Saturation Score\"),\n    \"Saturation Reasoning\": getVal(satSection, \"Reasoning\"),\n    \"Outlier Video\": getVal(velSection, \"Outlier Video\"),\n    \"Velocity Stats\": getVal(velSection, \"Stats\"),\n    \"Why It Won\": getVal(velSection, \"Why it won\"),\n    \"Verdict Recommendation\": getVal(verdictSection, \"Recommendation\"),\n    \"Verdict Confidence\": getVal(verdictSection, \"Confidence Score\"),\n    \"Verdict Reasoning\": getVal(verdictSection, \"Reasoning\"),\n    \"Key Market Signals\": verdictSection.includes(\"Key Market Signals\") ? verdictSection.split(\"Key Market Signals for Content**:\")[1].replace(/\\n/g, \" \").trim() : \"\"\n  };\n}\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -608
+      ],
+      "id": "40628366-1861-4faf-a502-760ffe98d2dc",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop through all input items\nfor (const item of items) {\n  const text = item.json.text || \"\";\n\n  // --- ROBUST DATA FETCHING ---\n  let searchKey = \"Unknown\";\n  let rowNum = \"\";\n  try {\n    const sourceItems = $('Get row(s) in sheet').all();\n    const sourceItem = sourceItems[item.index] || sourceItems[0];\n    searchKey = sourceItem.json[\"Search Query\"] || sourceItem.json.topic;\n    rowNum = sourceItem.json.row_number; \n  } catch (e) {\n    console.log(\"Could not fetch source data\");\n  }\n\n  // --- PARSING LOGIC (Fixed for Headers) ---\n  const sections = text.split(/(?:^|\\n)#{1,6}\\s+/);\n  let pivot = \"\", titles = \"\", thumbnails = \"\", hook = \"\", teaser = \"\";\n\n  sections.forEach(section => {\n    const cleanSec = section.trim();\n    if (cleanSec.match(/^1\\.\\s*THE PIVOT/i)) pivot = cleanSec.replace(/^1\\.\\s*THE PIVOT.*(\\n|$)/i, \"\").trim();\n    else if (cleanSec.match(/^2\\.\\s*YOUTUBE TITLES/i)) titles = cleanSec.replace(/^2\\.\\s*YOUTUBE TITLES.*(\\n|$)/i, \"\").trim();\n    else if (cleanSec.match(/^3\\.\\s*THUMBNAIL TEXT/i)) thumbnails = cleanSec.replace(/^3\\.\\s*THUMBNAIL TEXT.*(\\n|$)/i, \"\").trim();\n    else if (cleanSec.match(/^4\\.\\s*DESCRIPTION HOOK/i)) hook = cleanSec.replace(/^4\\.\\s*DESCRIPTION HOOK.*(\\n|$)/i, \"\").trim();\n    else if (cleanSec.match(/^5\\.\\s*SOCIAL TEASER/i)) teaser = cleanSec.replace(/^5\\.\\s*SOCIAL TEASER.*(\\n|$)/i, \"\").trim();\n  });\n\n  // Output Object\n  item.json = {\n    \"row_number\": rowNum, // <--- CRITICAL FOR UPDATING\n    \"Search Query\": searchKey,\n    \"Pivot Strategy\": pivot,\n    \"YouTube Titles\": titles,       \n    \"Thumbnail Options\": thumbnails, \n    \"Description Hook\": hook,\n    \"Social Teaser\": teaser\n  };\n}\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -360
+      ],
+      "id": "ec19def6-a9d9-4381-9fa5-f49095da58d4",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Complete",
+            "Date": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "Recommendation": "={{ $json['Verdict Recommendation'] }}",
+            "Confidence Score": "={{ $json['Verdict Confidence'] }}",
+            "Reasoning": "={{ $json['Verdict Reasoning'] }}",
+            "Pivot Strategy": "={{ $json['Pivot Strategy'] }}",
+            "YouTube Titles": "={{ $json['YouTube Titles'] }}",
+            "Thumbnail Text": "={{ $json['Thumbnail Options'] }}",
+            "Description Hook": "={{ $json['Description Hook'] }}",
+            "Social Teaser": "={{ $json['Social Teaser'] }}",
+            "row_number": "={{ $json.row_number }}",
+            "Key Market Signals": "={{ $json['Key Market Signals'] }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Search Query",
+              "displayName": "Search Query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recommendation",
+              "displayName": "Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Confidence Score",
+              "displayName": "Confidence Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reasoning",
+              "displayName": "Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Key Market Signals",
+              "displayName": "Key Market Signals",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pivot Strategy",
+              "displayName": "Pivot Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "YouTube Titles",
+              "displayName": "YouTube Titles",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Thumbnail Text",
+              "displayName": "Thumbnail Text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Description Hook",
+              "displayName": "Description Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Social Teaser",
+              "displayName": "Social Teaser",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        -484
+      ],
+      "id": "762cdbb6-ddd4-4210-8ac2-97dc42465315",
+      "name": "Update row in sheet1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        672,
+        -484
+      ],
+      "id": "866fb5e8-078c-4e09-9a79-991349341c46",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# CONTEXT\nWe are creating a YouTube technical tutorial video on the topic:{{ $('Code in JavaScript').item.json.topic }}\n\nHere is the objective market intelligence report from the Data Analyst:\n{{ $json.text }}\n\n# INSTRUCTIONS\nUsing ONLY the Analyst Report above, generate the following assets:\n\n1. THE PIVOT (if any)\n   - Explicitly state the angle shift (or lack thereof) based on the Recommendation and Key Market Signals.\n   - Example: \"Shifting focus from 'document classification agent' to 'automated PDF/invoice data extraction' to align with market terminology.\"\n\n2. YOUTUBE TITLES (5 variations)\n   - Formula: [Clear Outcome/Benefit] + [Tool/Method] + [Speed/Accessibility Hook if supported by data]\n   - Appeal to business owners/freelancers wanting results.\n   - Examples: \"Automate Invoice Processing in n8n – No Code Tutorial (2026)\", \"Stop Manual Data Entry: Build a PDF Extraction Agent in 15 Mins\"\n\n3. THUMBNAIL TEXT (3 options)\n   - Max 6 words\n   - High contrast, benefit-focused\n   - Examples: \"PDF → Excel Auto\", \"Zero Manual Entry\", \"Invoices Processed Fast\"\n\n4. DESCRIPTION HOOK (First 3 lines – ~120 characters total)\n   - SEO-optimized using dominant market terms from the report\n   - Highlight the content void or momentum signal\n   - Example: \"Tired of manually entering invoice/receipt data? This 15-min n8n tutorial shows you how to build an AI agent that extracts and processes PDFs automatically – no coding required.\"\n\n5. SOCIAL TEASER (for X/LinkedIn – 1-2 sentences)\n   - Hook with the pain point or opportunity identified in the report\n   - Professional, helpful tone\n   - End with call-to-action",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a YouTube Content Strategist specializing in no-fluff, high-value technical tutorials (10-20 min builds) for business owners and freelancers who want practical automation skills.  Your job is to translate objective market intelligence into compelling, SEO-optimized YouTube assets. You prioritize clarity, utility, and professional tone over clickbait.  You must base all suggestions strictly on the provided Analyst Report. Do not reference or assume access to raw SERP data."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        96,
+        -360
+      ],
+      "id": "dcadb3a0-59c7-4014-9b23-6cc81ba32494",
+      "name": "Content Strategist"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Google search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Youtube search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google search": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Youtube search": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Data Analyst",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Data Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Analyst": {
+      "main": [
+        [
+          {
+            "node": "Content Strategist",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Strategist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Strategist": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "35407d66-3233-455d-90e8-010ac20e6c9f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "16d565c281e7c9606801c9f92f3a927c18d99e014fd3b7a8df71ea3b3dc0210f"
+  },
+  "id": "qcVu92Q4MCWxrFmi",
+  "tags": []
+}
