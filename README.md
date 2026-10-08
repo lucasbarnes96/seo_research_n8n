@@ -143,3 +143,5 @@ You are a YouTube Content Strategist specializing in no-fluff, high-value techni
 ## License
 
 This project is open-source and available under the MIT License.
+
+**Related workflow:** [`seo_research_content_n8n_workflow`](https://github.com/lucasbarnes96/seo_research_content_n8n_workflow) uses the same manual Google/YouTube search inputs and Google Sheets output with one `Data Analyst` stage. This export adds a separate `Content Strategist` stage before the Sheet update. These notes describe the checked-in workflow exports; runtime activation in n8n was not verified.
